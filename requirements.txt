@@ -1,0 +1,13 @@
+--extra-index-url https://download.pytorch.org/whl/cu129
+
+huggingface_hub[cli]
+accelerate
+torch
+torchvision
+torchaudio
+transformers
+mlflow
+matplotlib
+seaborn
+datasets
+argparse

@@ -1,0 +1,108 @@
+{
+    "timestamp": "2025-08-22T13:39:54.646838",
+    "plot_file": "../plot_artifacts/20250822_133953_plot.png",
+    "json_sources": [
+        "../json_artifacts/sre_english_5b_eng_1.5B_gle_eng-gle/20250822_124250_qwen2.5-0.5b_english_wiki_irish_corpus_custom_sampler_checkpoint-1200_eng_Latn-gle_Latn.json",
+        "../json_artifacts/sre_english_5b_eng_1.5B_gle_eng-gle/20250822_124434_qwen2.5-0.5b_english_wiki_irish_corpus_custom_sampler_checkpoint-1500_eng_Latn-gle_Latn.json",
+        "../json_artifacts/sre_english_5b_eng_1.5B_gle_eng-gle/20250822_124620_qwen2.5-0.5b_english_wiki_irish_corpus_custom_sampler_checkpoint-1800_eng_Latn-gle_Latn.json",
+        "../json_artifacts/sre_english_5b_eng_1.5B_gle_eng-gle/20250822_124804_qwen2.5-0.5b_english_wiki_irish_corpus_custom_sampler_checkpoint-2100_eng_Latn-gle_Latn.json",
+        "../json_artifacts/sre_english_5b_eng_1.5B_gle_eng-gle/20250822_124948_qwen2.5-0.5b_english_wiki_irish_corpus_custom_sampler_checkpoint-2400_eng_Latn-gle_Latn.json",
+        "../json_artifacts/sre_english_5b_eng_1.5B_gle_eng-gle/20250822_125133_qwen2.5-0.5b_english_wiki_irish_corpus_custom_sampler_checkpoint-2700_eng_Latn-gle_Latn.json",
+        "../json_artifacts/sre_english_5b_eng_1.5B_gle_eng-gle/20250822_125316_qwen2.5-0.5b_english_wiki_irish_corpus_custom_sampler_checkpoint-300_eng_Latn-gle_Latn.json",
+        "../json_artifacts/sre_english_5b_eng_1.5B_gle_eng-gle/20250822_125501_qwen2.5-0.5b_english_wiki_irish_corpus_custom_sampler_checkpoint-3000_eng_Latn-gle_Latn.json",
+        "../json_artifacts/sre_english_5b_eng_1.5B_gle_eng-gle/20250822_125645_qwen2.5-0.5b_english_wiki_irish_corpus_custom_sampler_checkpoint-3300_eng_Latn-gle_Latn.json",
+        "../json_artifacts/sre_english_5b_eng_1.5B_gle_eng-gle/20250822_125828_qwen2.5-0.5b_english_wiki_irish_corpus_custom_sampler_checkpoint-3600_eng_Latn-gle_Latn.json",
+        "../json_artifacts/sre_english_5b_eng_1.5B_gle_eng-gle/20250822_130012_qwen2.5-0.5b_english_wiki_irish_corpus_custom_sampler_checkpoint-3900_eng_Latn-gle_Latn.json",
+        "../json_artifacts/sre_english_5b_eng_1.5B_gle_eng-gle/20250822_130156_qwen2.5-0.5b_english_wiki_irish_corpus_custom_sampler_checkpoint-4200_eng_Latn-gle_Latn.json",
+        "../json_artifacts/sre_english_5b_eng_1.5B_gle_eng-gle/20250822_130340_qwen2.5-0.5b_english_wiki_irish_corpus_custom_sampler_checkpoint-4500_eng_Latn-gle_Latn.json",
+        "../json_artifacts/sre_english_5b_eng_1.5B_gle_eng-gle/20250822_130525_qwen2.5-0.5b_english_wiki_irish_corpus_custom_sampler_checkpoint-4800_eng_Latn-gle_Latn.json",
+        "../json_artifacts/sre_english_5b_eng_1.5B_gle_eng-gle/20250822_130711_qwen2.5-0.5b_english_wiki_irish_corpus_custom_sampler_checkpoint-5100_eng_Latn-gle_Latn.json",
+        "../json_artifacts/sre_english_5b_eng_1.5B_gle_eng-gle/20250822_130855_qwen2.5-0.5b_english_wiki_irish_corpus_custom_sampler_checkpoint-5400_eng_Latn-gle_Latn.json",
+        "../json_artifacts/sre_english_5b_eng_1.5B_gle_eng-gle/20250822_131038_qwen2.5-0.5b_english_wiki_irish_corpus_custom_sampler_checkpoint-5700_eng_Latn-gle_Latn.json",
+        "../json_artifacts/sre_english_5b_eng_1.5B_gle_eng-gle/20250822_131223_qwen2.5-0.5b_english_wiki_irish_corpus_custom_sampler_checkpoint-5784_eng_Latn-gle_Latn.json",
+        "../json_artifacts/sre_english_5b_eng_1.5B_gle_eng-gle/20250822_131407_qwen2.5-0.5b_english_wiki_irish_corpus_custom_sampler_checkpoint-600_eng_Latn-gle_Latn.json",
+        "../json_artifacts/sre_english_5b_eng_1.5B_gle_eng-gle/20250822_131551_qwen2.5-0.5b_english_wiki_irish_corpus_custom_sampler_checkpoint-900_eng_Latn-gle_Latn.json"
+    ],
+    "base_target_pairs": [
+        {
+            "base_lang": "eng_Latn",
+            "target_lang": "gle_Latn"
+        },
+        {
+            "base_lang": "eng_Latn",
+            "target_lang": "gle_Latn"
+        },
+        {
+            "base_lang": "eng_Latn",
+            "target_lang": "gle_Latn"
+        },
+        {
+            "base_lang": "eng_Latn",
+            "target_lang": "gle_Latn"
+        },
+        {
+            "base_lang": "eng_Latn",
+            "target_lang": "gle_Latn"
+        },
+        {
+            "base_lang": "eng_Latn",
+            "target_lang": "gle_Latn"
+        },
+        {
+            "base_lang": "eng_Latn",
+            "target_lang": "gle_Latn"
+        },
+        {
+            "base_lang": "eng_Latn",
+            "target_lang": "gle_Latn"
+        },
+        {
+            "base_lang": "eng_Latn",
+            "target_lang": "gle_Latn"
+        },
+        {
+            "base_lang": "eng_Latn",
+            "target_lang": "gle_Latn"
+        },
+        {
+            "base_lang": "eng_Latn",
+            "target_lang": "gle_Latn"
+        },
+        {
+            "base_lang": "eng_Latn",
+            "target_lang": "gle_Latn"
+        },
+        {
+            "base_lang": "eng_Latn",
+            "target_lang": "gle_Latn"
+        },
+        {
+            "base_lang": "eng_Latn",
+            "target_lang": "gle_Latn"
+        },
+        {
+            "base_lang": "eng_Latn",
+            "target_lang": "gle_Latn"
+        },
+        {
+            "base_lang": "eng_Latn",
+            "target_lang": "gle_Latn"
+        },
+        {
+            "base_lang": "eng_Latn",
+            "target_lang": "gle_Latn"
+        },
+        {
+            "base_lang": "eng_Latn",
+            "target_lang": "gle_Latn"
+        },
+        {
+            "base_lang": "eng_Latn",
+            "target_lang": "gle_Latn"
+        },
+        {
+            "base_lang": "eng_Latn",
+            "target_lang": "gle_Latn"
+        }
+    ]
+}

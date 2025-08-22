@@ -1,0 +1,25 @@
+#!/bin/bash
+#SBATCH --job-name=<JOB_NAME>               # Job name
+#SBATCH --gres=gpu:<NUM_GPUS>              # Number of GPUs
+#SBATCH --cpus-per-task=<CPUS>             # CPU cores
+#SBATCH --partition=<PARTITION>            # Partition/queue
+#SBATCH --mem=<MEMORY>                     # RAM
+#SBATCH --time=<TIME>                       # Max runtime (optional)
+#SBATCH --output=logs/<JOB_NAME>-%j.out    # Stdout log
+
+# --- User variables (replace or export before submitting) ---
+BASE_PATH="<BASE_PATH>"                   # Path to model checkpoints
+BASE_LANG="<BASE_LANG>"                   # Source language
+TARGET_LANG="<TARGET_LANG>"               # Target language
+ARTIFACT_FOLDER="<ARTIFACT_FOLDER>"       # Where JSON artifacts will be saved
+
+# --- Loop through checkpoints (optional) ---
+for CKPT in "$BASE_PATH"/checkpoint-*; do
+    echo "Running experiment for $CKPT"
+
+    python <SCRIPT_PATH>/sr_experiment.py \
+        --model_path "$CKPT" \
+        --base "$BASE_LANG" \
+        --target "$TARGET_LANG" \
+        --json-artifact-out "$ARTIFACT_FOLDER"
+done
