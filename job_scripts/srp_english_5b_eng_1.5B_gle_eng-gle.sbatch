@@ -6,8 +6,9 @@
 #SBATCH --output=logs/sr_plot_all-%j.out     # Stdout log
 
 # --- User variables ---
-JSON_FOLDER="../json_artifacts/sre_english_5b_eng_1.5B_gle_eng-gle"  # Folder containing JSON artifacts
-SAVE_FOLDER="../plot_artifacts"                                           # Folder to save plots and metadata
+JSON_FOLDER="../json_artifacts/sre_english_5b_eng_1.5B_gle_eng-gle_652_20250822_141911"  # Folder containing JSON artifacts
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+SAVE_FOLDER="../plot_artifacts/sre_english_5b_eng_1.5B_gle_eng-gle_${SLURM_JOB_ID}_${TIMESTAMP}"                                           # Folder to save plots and metadata
 
 # --- Run the plotting script on all JSON files ---
 JSON_FILES=("$JSON_FOLDER"/*.json)  # Array of all JSON files in folder

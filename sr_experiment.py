@@ -138,7 +138,7 @@ def layer_sentence_representation(
 
     ret: dict[int, Tensor] = {}
 
-    for i in temp:
+    for i in temp.keys():
         # (sentence_count, d_model)
         ret[i] = torch.cat(temp[i], dim=0)
 
@@ -264,9 +264,14 @@ def main():
 
     layer_acc = {}
     # Loop through each layer
-    for i, _ in enumerate(base_ret):
-        cos_sim = cosine_similarity(base_ret[i], target_ret[i])
-        layer_acc[i] = layer_accuracy(cos_sim)
+
+    for layer_index, _ in base_ret.items():
+        cos_sim = cosine_similarity(base_ret[layer_index], target_ret[layer_index])
+        layer_acc[layer_index] = layer_accuracy(cos_sim)
+
+    # for i, _ in enumerate(base_ret):
+    #     cos_sim = cosine_similarity(base_ret[i], target_ret[i])
+    #     layer_acc[i] = layer_accuracy(cos_sim)
 
     # Generate artifact json file
     generate_json_artifact(
