@@ -1,5 +1,7 @@
 # Commands table
 
+Note: Some experiment uses local models, reconfiguration of `envs` files are needed
+
 | Experiment                                    | Command                                                               |
 | --------------------------------------------- | --------------------------------------------------------------------- |
 | Qwen2.5-0.5B_5B-eng_1.5B-eus_eng-eus          | `sbatch sre.sh envs/qwen2.5-0.5B_5B-eng_1.5B-eus_eng-eus.sh`          |
