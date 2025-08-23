@@ -1,4 +1,4 @@
-# SLA Sentence Retrieval Evaluation on Checkpoints
+# SLA Sentence Retrieval Evaluation
 
 ## Models
 - https://huggingface.co/tktung/sla_cpt
@@ -54,6 +54,8 @@ sbatch sre.sh envs/uccix_llama2-13B_eng-gle.sh
 ```
 
 Run all experiments in `envs` folder
+
+Note: need to configure paths for local models
 
 ```
 cd job_scripts
