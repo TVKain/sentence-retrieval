@@ -53,3 +53,10 @@ Example
 sbatch sre.sh envs/uccix_llama2-13B_eng-gle.sh
 ```
 
+Run all experiments in `envs` folder
+
+```
+cd job_scripts
+sbatch sre_all.sh
+```
+
