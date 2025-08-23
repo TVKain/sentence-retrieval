@@ -6,7 +6,6 @@ torch
 torchvision
 torchaudio
 transformers
-mlflow
 matplotlib
 seaborn
 datasets

@@ -12,24 +12,44 @@
 
 ## Folder structure
 
-`job_scripts`: Slurm job scripts, logs folder for scripts should be in here as well
-`json_artifacts`: Json artifacts generated from running `sr_experiment.py`
-`plot_artifacts`: Plot artifacts generated from `sr_plot.py`
+`job_scripts`: Slurm job scripts
+
 
 ## Usage
 
-Note: To access gated hugging face repo run `hf auth login` on the command line first
-
-### Generate JSON artifacts
+### Using python
 
 ```
-Usage:
-python sr_experiment.py [-h] --model_path MODEL_PATH --base BASE --target TARGET [--device DEVICE]
-                             [--json-artifact-out JSON_ARTIFACT_OUT] [--plot-artifact-out PLOT_ARTIFACT_OUT]
+usage: sr_experiment.py [-h] --model_path MODEL_PATH --base BASE --target TARGET [--device DEVICE]
+                        [--artifact-out ARTIFACT_OUT] [--margin-variant MARGIN_VARIANT]
+
+Sentence retrieval task with plotting
+
+options:
+  -h, --help            show this help message and exit
+  --model_path MODEL_PATH
+                        Folder with checkpoints or Hugging Face model ID
+  --base BASE           Base language ISO code
+  --target TARGET       Target language ISO code
+  --device DEVICE       Device to use (cuda or cpu)
+  --artifact-out ARTIFACT_OUT
+                        Folder to save JSON artifacts and plot
+  --margin-variant MARGIN_VARIANT
+                        Margin variant for scoring
 ```
 
-### Generate Plot artifacts
+
+### Using slurm
+
+Run an experiment
+
 ```
-Usage: 
-python sr_plot.py [-h] --json JSON [JSON ...] [--plot-artifact-out PLOT_ARTIFACT_OUT]
+cd job_scripts
+sbatch sre.sh <path_to_env_file>
 ```
+
+Example
+```
+sbatch sre.sh envs/uccix_llama2-13B_eng-gle.sh
+```
+

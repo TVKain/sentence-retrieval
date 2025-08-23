@@ -1,33 +1,25 @@
 """
-Sentence retrieval task accuracy on FLORES-PRO dataset
+Sentence retrieval task accuracy on FLORES-PRO dataset with plotting
 
-Ref: https://aclanthology.org/2024.loresmt-1.20.pdf
+Ref 1: https://aclanthology.org/2024.loresmt-1.20.pdf
+Ref 2: https://arxiv.org/pdf/1811.01136
 """
 
 import argparse
 from datetime import datetime
 import json
-import os
-
 from pathlib import Path
 
 import torch
-import torch.nn.functional as F
+from torch import Tensor
+from datasets import load_dataset
+from transformers import AutoModelForCausalLM, AutoTokenizer
 import matplotlib.pyplot as plt
 
-from torch import Tensor
 
-import hashlib
-
-from datasets import load_dataset, concatenate_datasets
-from datasets.arrow_dataset import Dataset
-from transformers import AutoModelForCausalLM, AutoTokenizer
-
-
+# -------------------------- Model & Dataset --------------------------
 def load_model(model_path: str, device_map="auto") -> AutoModelForCausalLM:
     """Load a model"""
-    if not os.path.exists(model_path):
-        raise FileNotFoundError(f"The model path {model_path} does not exist.")
     print(f"Loading model from {model_path}")
     return AutoModelForCausalLM.from_pretrained(
         model_path,
@@ -38,161 +30,59 @@ def load_model(model_path: str, device_map="auto") -> AutoModelForCausalLM:
 
 def load_flores(dataset: str) -> list[str]:
     FLORES = "openlanguagedata/flores_plus"
-
-    ds = load_dataset(FLORES, dataset)
-
-    ds = concatenate_datasets([ds["dev"], ds["devtest"]])
-    #ds = ds["devtest"]
-
+    ds = load_dataset(FLORES, dataset)["dev"]
     return [d["text"] for d in ds]
 
 
+# -------------------------- Utilities --------------------------
 def cosine_similarity(first: Tensor, second: Tensor) -> Tensor:
-    """
-    Compute cosine similarity between 2 sets of sentences
-    Output will be a matrix where
-    - Each row is cosine sim between first sentence and all other second sentences
-    first: [sentence_count, d_model]
-    second: [sentence_count, d_model]
-
-    out: [sentence_count, sentence_count]
-    """
-    first_normalized: Tensor = first / torch.linalg.norm(
-        first, ord=2, dim=1, keepdim=True
-    )
-    second_normalized: Tensor = second / torch.linalg.norm(
-        second, ord=2, dim=1, keepdim=True
-    )
-
-    return first_normalized @ second_normalized.T
+    first_norm = first / torch.linalg.norm(first, dim=1, keepdim=True)
+    second_norm = second / torch.linalg.norm(second, dim=1, keepdim=True)
+    return first_norm @ second_norm.T
 
 
-def layer_accuracy(cos_sim: Tensor) -> float:
-    """
-    Calculate the layer accuracy for the sentence retrieval task
-    cos_sim: [sentence_count, sentence_count]
+def margin_based_scoring(first: Tensor, second: Tensor, k=4, variant="ratio", eps=1e-6) -> Tensor:
+    a = cosine_similarity(first, second)
+    if variant == "absolute":
+        return a
+    nn_k_row = torch.topk(a, k=min(k, a.size(1)), dim=1).values
+    nn_k_col = torch.topk(a, k=min(k, a.size(0)), dim=0).values
+    row_mean = nn_k_row.mean(dim=1, keepdim=True)
+    col_mean = nn_k_col.mean(dim=0, keepdim=True)
+    b = (row_mean + col_mean) * 0.5 + eps
+    return a - b if variant == "distance" else a / b
 
-    if the argmax for each row is the index for the row itself then we will accum 1 to the total
-    Then divide by sentence_count
-    """
 
-    # [sentence_count]
-    layer_predictions = cos_sim.argmax(dim=1)
-
-    # [sentence_count]
-    accuracy = (layer_predictions == torch.arange(cos_sim.size(0))).float()
-
-    # scalar
-    return accuracy.mean().item()
+def layer_accuracy(score: Tensor) -> float:
+    device = score.device
+    preds = score.argmax(dim=1)
+    return (preds == torch.arange(score.size(0), device=device)).float().mean().item()
 
 
 @torch.no_grad()
-def layer_sentence_representation(
-    model, tokenizer, sentences: list[str], batch_size: int = 32
-) -> dict[int, list[Tensor]]:
-    """
-    Return the mean hidden state of each sentence for each layer
-    Note: Qwen has 24 transformer layers and 1 input embedding layers (25 in total)
-
-    Update 1: Add batching hopefully this solves OOM
-    Update 2: It solved OOM I think
-
-    model: The model to use
-    tokenizer: The tokenizer to use
-    sentences: List of sentences
-
-    {
-        layer_index: [sentence_count, d_model]
-    }
-    """
-
+def layer_sentence_representation(model, tokenizer, sentences: list[str], batch_size=32, device=None) -> dict[int, Tensor]:
     temp: dict[int, list[Tensor]] = {}
-
-    tokens = tokenizer(sentences, return_tensors="pt", padding=True)
-
     for start in range(0, len(sentences), batch_size):
-        end = start + batch_size
-        batch_sentences = sentences[start:end]
-
-        tokens = tokenizer(batch_sentences, return_tensors="pt", padding=True)
-
-        # Update 1: Use cache False so won't OOM GPU according to the prof GPT
-        # Update 2: OOM still occurs (GPT lies)
-        # tuple(layer_index, Tensor(batch_size, d_model))
-        hidden_states = model(
-            **tokens, output_hidden_states=True, use_cache=False
-        ).hidden_states
-
-        for i, hidden_state in enumerate(hidden_states):
-            mean_hidden = mean_hidden_state(
-                hidden_states=hidden_state, attention_mask=tokens["attention_mask"]
-            )
-
-            if i not in temp:
-                temp[i] = []
-
-            temp[i].append(mean_hidden)
-
+        batch = sentences[start:start + batch_size]
+        tokens = tokenizer(batch, return_tensors="pt", padding=True)
+        tokens = {k: v.to(device) for k, v in tokens.items()}
+        hidden_states = model(**tokens, output_hidden_states=True, use_cache=False).hidden_states
+        for i, hs in enumerate(hidden_states):
+            mean_hs = mean_hidden_state(hs, tokens["attention_mask"])
+            temp.setdefault(i, []).append(mean_hs)
         del hidden_states, tokens
         torch.cuda.empty_cache()
-
-    ret: dict[int, Tensor] = {}
-
-    for i in temp.keys():
-        # (sentence_count, d_model)
-        ret[i] = torch.cat(temp[i], dim=0)
-
-    return ret
+    return {i: torch.cat(temp[i], dim=0) for i in temp}
 
 
 def mean_hidden_state(hidden_states: Tensor, attention_mask: Tensor) -> Tensor:
-    """
-    Take average of all token embeddings for a sentence hidden state
-    Create a single vector representation for that sentence
-    We do things in batch
-
-    Params:
-    hidden_states: [batch, seq, d_model]
-    attention_mask: [batch, seq]
-
-    Returns:
-    mean: [batch, d_model]
-    """
-    # Unsqueeze to [batch, seq, 1]
-    attention_mask = attention_mask.unsqueeze(-1).to(hidden_states.dtype)
-
-    # Remove pad [batch, seq, d_model]
-    unpad = hidden_states * attention_mask
-
-    # Sum over seq [batch, d_model]
-    sum = unpad.sum(dim=1)
-
-    # Sum over seq [batch, 1]
-    k = attention_mask.sum(dim=1)
-
-    # [batch, d_model]
-    mean = sum / k
-    return mean
+    mask = attention_mask.unsqueeze(-1).to(hidden_states.dtype)
+    summed = (hidden_states * mask).sum(dim=1)
+    count = mask.sum(dim=1)
+    return summed / count
 
 
-def generate_json_artifact(
-    model_path: str,
-    layer_acc: dict[int, float],
-    base_lang: str,
-    target_lang: str,
-    save_dir: str,
-):
-    """
-    Generate a JSON artifact summarizing sentence retrieval accuracy per layer.
-
-    Args:
-        model_path (str): Path or name of the model used.
-        layer_acc (dict[int, float]): Accuracy for each layer, e.g., {0: 0.12, 1: 0.34, ...}.
-        base_lang (str): Source language code.
-        target_lang (str): Target language code.
-        save_dir (str): Directory to save the JSON artifact.
-    """
-
+def generate_json_artifact(model_path: str, layer_acc: dict[int, float], base_lang: str, target_lang: str, save_dir: str):
     artifact = {
         "model_path": model_path,
         "base_lang": base_lang,
@@ -200,87 +90,112 @@ def generate_json_artifact(
         "timestamp": datetime.now().isoformat(),
         "layer_accuracy": sorted(layer_acc.items()),
     }
-
     Path(save_dir).mkdir(exist_ok=True, parents=True)
-
-    # We are using the convention <model_name>/<checkpoint>
-    model_name = Path(model_path).parent.name
-    checkpoint = Path(model_path).name
-
+    checkpoint = Path(model_path).name if Path(model_path).exists() else "hf_model"
     timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-    json_path = Path(save_dir) / f"{timestamp_str}_{model_name}_{checkpoint}_{base_lang}-{target_lang}.json"
-
+    json_path = Path(save_dir) / f"{timestamp_str}_{checkpoint}.json"
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(artifact, f, indent=4, ensure_ascii=False)
-
     print(f"Artifact saved to {json_path}")
     return json_path
 
+
+# -------------------------- Plotting --------------------------
+def plot_layer_accuracy(json_files: list[str], save_folder: str):
+    plt.figure(figsize=(10, 5))  # wider figure
+
+    def checkpoint_sort_key(jf_path):
+        data = json.load(open(jf_path, "r", encoding="utf-8"))
+        checkpoint_name = Path(data["model_path"]).name
+        try:
+            return int(checkpoint_name.split("-")[-1])
+        except ValueError:
+            return 0
+
+    json_files = sorted(json_files, key=checkpoint_sort_key)
+
+    for jf in json_files:
+        data = json.load(open(jf, "r", encoding="utf-8"))
+        layer_acc_pairs = data.get("layer_accuracy", [])
+        layer_acc_pairs.sort(key=lambda x: x[0])
+        layers = [p[0] for p in layer_acc_pairs]
+        acc = [p[1] for p in layer_acc_pairs]
+        model_name = Path(data["model_path"]).parent.name
+        checkpoint = Path(data["model_path"]).name
+        base_lang = data.get("base_lang", "unknown")
+        target_lang = data.get("target_lang", "unknown")
+        label = f"{model_name}/{checkpoint} ({base_lang}-{target_lang})"
+        plt.plot(layers, acc, marker="o", label=label)
+
+    plt.xlabel("Layer")
+    plt.ylabel("Accuracy")
+    plt.title("Sentence Retrieval Accuracy per Layer")
+    plt.grid(True)
+    plt.legend(loc="center left", bbox_to_anchor=(1, 0.5))
+    plt.subplots_adjust(right=0.75)
+
+    Path(save_folder).mkdir(exist_ok=True, parents=True)
+    timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+    plot_path = Path(save_folder) / f"{timestamp_str}_plot.png"
+    plt.savefig(plot_path, bbox_inches="tight")
+    plt.close()
+    print(f"Plot saved to {plot_path}")
+    return plot_path
+
+
+# -------------------------- Main --------------------------
 def main():
-    parser = argparse.ArgumentParser(
-        description="Sentence retrieval task"
-    )
-    parser.add_argument(
-        "--model_path", type=str, required=True, help="Path to the model"
-    )
-    parser.add_argument(
-        "--base", type=str, required=True, help="Base language ISO code (e.g., eng)"
-    )
-    parser.add_argument(
-        "--target", type=str, required=True, help="Target language ISO code (e.g., gle)"
-    )
-    parser.add_argument(
-        "--device", type=str, default="auto", help="Device to use (cuda or cpu)"
-    )
-    parser.add_argument(
-        "--json-artifact-out",
-        type=str,
-        default="json_artifacts",
-        help="Path to JSON accuracy artifacts",
-    )
-    parser.add_argument(
-        "--plot-artifact-out",
-        type=str,
-        default="plot_artifacts",
-        help="Path to plot artifact results",
-    )
+    parser = argparse.ArgumentParser(description="Sentence retrieval task with plotting")
+    parser.add_argument("--model_path", type=str, required=True, help="Folder with checkpoints or Hugging Face model ID")
+    parser.add_argument("--base", type=str, required=True, help="Base language ISO code")
+    parser.add_argument("--target", type=str, required=True, help="Target language ISO code")
+    parser.add_argument("--device", type=str, default="auto", help="Device to use (cuda or cpu)")
+    parser.add_argument("--artifact-out", type=str, default="artifacts", help="Folder to save JSON artifacts and plot")
+    parser.add_argument("--margin-variant", type=str, default="ratio", help="Margin variant for scoring")
     args = parser.parse_args()
+
+    device = torch.device("cuda" if torch.cuda.is_available() and args.device != "cpu" else "cpu")
+    print(f"Using device: {device}")
 
     print(f"Loading {args.base} and {args.target} FLORES datasets...")
     base_data = load_flores(args.base)
     target_data = load_flores(args.target)
 
-    print(f"Loading model from {args.model_path}...")
-    model = load_model(args.model_path)
-    tokenizer = AutoTokenizer.from_pretrained(args.model_path)
-    model.eval()
+    model_path = Path(args.model_path)
+    if model_path.exists() and model_path.is_dir():
+        checkpoint_dirs = sorted(
+            model_path.glob("checkpoint-*"),
+            key=lambda x: int(x.name.split("-")[-1]) if "-" in x.name else 0
+        )
+        if not checkpoint_dirs:
+            checkpoint_dirs = [model_path]
+    else:
+        checkpoint_dirs = [args.model_path]
 
-    print(f"Computing layer embeddings for {args.base}...")
-    base_ret = layer_sentence_representation(model, tokenizer, base_data)
-    print(f"Computing layer embeddings for {args.target}...")
-    target_ret = layer_sentence_representation(model, tokenizer, target_data)
+    json_files = []
+    for ckpt in checkpoint_dirs:
+        print(f"\n=== Processing checkpoint/model: {ckpt} ===")
+        model = load_model(str(ckpt))
+        model.to(device)
+        model.eval()
+        tokenizer = AutoTokenizer.from_pretrained(str(ckpt))
+        if tokenizer.pad_token is None:
+            tokenizer.pad_token = tokenizer.eos_token or tokenizer.unk_token
 
-    print(f"Computing cosine similarity between {args.target} and {args.base}")
+        print(f"Computing layer embeddings for {args.base}...")
+        base_ret = layer_sentence_representation(model, tokenizer, base_data, device=device)
+        print(f"Computing layer embeddings for {args.target}...")
+        target_ret = layer_sentence_representation(model, tokenizer, target_data, device=device)
 
-    layer_acc = {}
-    # Loop through each layer
+        print("Computing cosine similarity and layer accuracy...")
+        layer_acc = {i: layer_accuracy(margin_based_scoring(base_ret[i], target_ret[i], variant=args.margin_variant))
+                     for i in base_ret.keys()}
 
-    for layer_index, _ in base_ret.items():
-        cos_sim = cosine_similarity(base_ret[layer_index], target_ret[layer_index])
-        layer_acc[layer_index] = layer_accuracy(cos_sim)
+        json_file = generate_json_artifact(str(ckpt), layer_acc, args.base, args.target, args.artifact_out)
+        json_files.append(json_file)
 
-    # for i, _ in enumerate(base_ret):
-    #     cos_sim = cosine_similarity(base_ret[i], target_ret[i])
-    #     layer_acc[i] = layer_accuracy(cos_sim)
-
-    # Generate artifact json file
-    generate_json_artifact(
-        args.model_path,
-        layer_acc,
-        args.base,
-        args.target,
-        args.json_artifact_out
-    )
+    # Generate plot
+    plot_layer_accuracy(json_files, args.artifact_out)
 
 
 if __name__ == "__main__":
