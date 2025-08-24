@@ -1,6 +1,6 @@
 # Commands table
 
-Note: Some experiment uses local models, reconfiguration of `envs` files are needed
+Note: Some experiments use local models, reconfiguration of `envs` files are needed
 
 | Experiment                                    | Command                                                               |
 | --------------------------------------------- | --------------------------------------------------------------------- |

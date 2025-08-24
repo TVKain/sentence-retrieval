@@ -187,7 +187,7 @@ def main():
         print(f"Computing layer embeddings for {args.target}...")
         target_ret = layer_sentence_representation(model, tokenizer, target_data, device=device)
 
-        print("Computing cosine similarity and layer accuracy...")
+        print("Computing layer accuracy...")
         layer_acc = {i: layer_accuracy(margin_based_scoring(base_ret[i], target_ret[i], variant=args.margin_variant))
                      for i in base_ret.keys()}
 
