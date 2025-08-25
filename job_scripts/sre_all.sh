@@ -16,6 +16,8 @@ if [ ! -d "$ENVS_DIR" ]; then
     exit 1
 fi
 
+export PYTHONUNBUFFERED=1
+
 # Loop over all env files
 for ENV_FILE in "$ENVS_DIR"/*.sh; do
     if [ ! -f "$ENV_FILE" ]; then

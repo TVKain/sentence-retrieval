@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=sre
-#SBATCH --gres=gpu:4
+#SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
 #SBATCH --partition=physical-gpu
 #SBATCH --mem=32G
@@ -23,6 +23,8 @@ source "$ENV_FILE"
 
 # Create the artifact folder
 mkdir -p "$ARTIFACT_FOLDER"
+
+export PYTHONUNBUFFERED=1
 
 # Run the Python script
 python ../sr_experiment.py \

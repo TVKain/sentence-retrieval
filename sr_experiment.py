@@ -27,6 +27,39 @@ def load_model(model_path: str, device_map="auto") -> AutoModelForCausalLM:
         device_map=device_map,
     )
 
+def load_sla_word(lang: str) -> tuple[list[str], list[str]]:
+    """
+    Load words from the SLA dataset for a specific language and their English equivalents.
+
+    Args:
+        lang (str): ISO language code (e.g., "gle" for Irish, "eus" for Basque, "cmn" for Mandarin Chinese).
+
+    Returns:
+        Tuple[List[str], List[str]]:
+            - List of words in the target language (specified by `lang`).
+            - List of corresponding English words.
+    
+    Example:
+        foreign, english = load_sla_word("gle")
+        print(foreign[:5])
+        ['agus', 'ar', 'bain', 'bean', 'beidh']
+        print(english[:5])
+        ['and', 'on', 'use', 'woman', 'will be']
+    """
+    SLA_WORD = "tvkain/sla"  # Hugging Face dataset repo path
+    # Load the dataset (train split)
+    ds = load_dataset(SLA_WORD, split="train")
+    
+    # Filter the dataset for the given language
+    filtered_ds = ds.filter(lambda x: x["lang"] == lang)
+    
+    # Extract the foreign language words and their English equivalents
+    foreign_words = [entry[lang] for entry in filtered_ds]
+    english_words = [entry["eng"] for entry in filtered_ds]
+    
+    return foreign_words, english_words
+
+
 
 def load_flores(dataset: str) -> list[str]:
     FLORES = "openlanguagedata/flores_plus"
